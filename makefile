@@ -1,12 +1,20 @@
 CC = gcc
 CFLAGS = -Wall -g
-TARGET = myprogram
-SOURCES = myprogram.c miniaudio.c
+KISSFFT_DIR = kissfft-master
 
-all: $(TARGET)
+TARGET := $(MAKECMDGOALS)
+OBJS := $(TARGET).o $(KISSFFT_DIR)/kiss_fft.o $(KISSFFT_DIR)/kiss_fftr.o
 
-$(TARGET): $(SOURCES)
-	$(CC) $(CFLAGS) $(SOURCES) -o $(TARGET)
+.PHONY: clean
+
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -o $(TARGET)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(KISSFFT_DIR)/%.o: $(KISSFFT_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(TARGET) *.o
+	rm -f *.o $(KISSFFT_DIR)/*.o $(TARGET)
