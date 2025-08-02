@@ -9,6 +9,8 @@
 
 #define BUFFER_SIZE 1024
 #define PITCH_SHIFT 2
+#define SAMPLE_RATE 44100
+
 typedef struct {
     kiss_fftr_cfg fwd_config;
     kiss_fftr_cfg inv_config;
@@ -77,7 +79,7 @@ int main(int argc, char **argv)
     deviceConfig = ma_device_config_init(ma_device_type_duplex);
     deviceConfig.capture.pDeviceID = NULL;
     deviceConfig.playback.pDeviceID = &pPlaybackInfos[id].id;
-    deviceConfig.sampleRate           = 44100;  // or match your system's setting
+    deviceConfig.sampleRate           = SAMPLE_RATE;  // or match your system's setting
     deviceConfig.wasapi.noAutoConvertSRC = MA_TRUE;  // If using WASAPI
     deviceConfig.wasapi.noDefaultQualitySRC = MA_TRUE;
 
