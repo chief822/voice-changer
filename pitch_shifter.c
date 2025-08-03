@@ -9,7 +9,7 @@
 
 #define BUFFER_SIZE 1024
 #define PITCH_SHIFT 2
-#define SAMPLE_RATE 44100
+#define SAMPLE_RATE 48000
 
 typedef struct {
     kiss_fftr_cfg fwd_config;

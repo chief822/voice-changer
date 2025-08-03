@@ -1,9 +1,8 @@
 import librosa
-import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np 
 
 # Load your WAV file
-y, sr = librosa.load("tests/110.wav", sr=None)
+y, sr = librosa.load("tests/test.wav", sr=None)
 
 # Extract pitch using YIN / pYIN method
 f0, voiced_flag, voiced_probs = librosa.pyin(
@@ -16,13 +15,3 @@ f0_clean = f0[~np.isnan(f0)]
 # Show pitch stats
 print("Mean pitch (Hz):", np.mean(f0_clean))
 print("Median pitch (Hz):", np.median(f0_clean))
-
-# Plot pitch over time
-plt.figure(figsize=(10, 4))
-plt.plot(f0, label='Pitch (Hz)')
-plt.xlabel("Frame")
-plt.ylabel("Frequency (Hz)")
-plt.title("Pitch Over Time")
-plt.grid()
-plt.legend()
-plt.show()
