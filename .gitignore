@@ -2,7 +2,6 @@
 archive/
 webrtc-m137_release/
 out/
-build/
 bazel-bin/
 bazel-out/
 bazel-testlogs/
