@@ -1,4 +1,5 @@
 # === Build and Output Directories ===
+archive/
 webrtc-m137_release/
 out/
 build/
@@ -18,7 +19,6 @@ bazel-testlogs/
 *.exe
 *.dylib
 *.a
-*.lib
 *.pch
 *.pdb
 *.ilk

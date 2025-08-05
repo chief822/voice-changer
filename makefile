@@ -1,20 +1,12 @@
-CC = gcc
-CFLAGS = -Wall -g
-KISSFFT_DIR = kissfft-master
+TARGET = $(MAKECMDGOALS)
 
-TARGET := $(MAKECMDGOALS)
-OBJS := $(TARGET).o $(KISSFFT_DIR)/kiss_fft.o $(KISSFFT_DIR)/kiss_fftr.o
+$(TARGET): $(TARGET).o build/libwebrtc_vad.lib
+	gcc $@.o build/libwebrtc_vad.lib -o $@
+
+%.o: %.c
+	gcc -c $< -o $@
 
 .PHONY: clean
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(TARGET)
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(KISSFFT_DIR)/%.o: $(KISSFFT_DIR)/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
 clean:
-	rm -f *.o $(KISSFFT_DIR)/*.o $(TARGET)
+	rm -f *.o main
