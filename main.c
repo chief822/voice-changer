@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include <time.h>
 
-#define HEADER_SIZE 44
 #define yin_SAMPLE_SIZE 2048
 
 int main(int argc, char *argv[]) {

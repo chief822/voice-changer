@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 16384
 #define PITCH_SHIFT 2
 #define SAMPLE_RATE 48000
 
