@@ -40,24 +40,25 @@ int main(int argc, char *argv[])
     if (!drwav_init_file_write(&out, argv[2], &format, NULL)) {
         printf("Failed to create output.wav\n");
         return 1;
-    }
+    } 
 
 
     float factor = atof(argv[3]);
+    int female = 1; 
 
-    float buffer[BLOCK_SIZE];
+    float buffer[BLOCK_SIZE]; 
     double samples[BLOCK_SIZE];
     double processed[BLOCK_SIZE];
     int16_t output[BLOCK_SIZE];
     WorldParamters config1;
-    setup(&config1);
+    setup(&config1, female); 
     WorldParamters config2;
-    setup(&config2);
+    setup(&config2, female); 
     clock_t start = clock();
     while (1) {
         drwav_uint64 framesRead = drwav_read_pcm_frames_f32(&wav, BLOCK_SIZE, buffer);
         if (framesRead == 0)
-            break;
+            break; 
         convertFloatArrayToDouble(buffer, samples, BLOCK_SIZE);
         // removeDC(samples, BLOCK_SIZE);
         process(samples, processed, factor, &config1, &config2);

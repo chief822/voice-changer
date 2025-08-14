@@ -1,4 +1,5 @@
 #include "world/dio.h"
+#include "world/harvest.h"
 #include "world/stonemask.h"
 #include "world/cheaptrick.h"
 #include "world/d4c.h"
@@ -6,6 +7,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <omp.h>
 
 #define WORLD_SAMPLE_RATE 48000
@@ -30,18 +32,50 @@ typedef struct {
     BinMap map[WORLD_FFT_SIZE/2 + 1];
 } WorldParamters;
 
-double warping_ratio_for_freq(double f) {
+double warping_ratio_for_freq_m2f(double f) {
     if (f < 500.0) return 1.08;
     if (f < 2500.0)
         return 1.08 + (f - 500.0) * (1.25 - 1.08) / (2500.0 - 500.0);
     return 1.25 - (f - 2500.0) * (0.20) / (WORLD_SAMPLE_RATE / 2.0 - 2500.0);
 }
 
-void build_bin_map(BinMap *map, int bins, int fft_size, int fs) {
+double warping_ratio_for_freq_f2m(double f) {
+    // First formant: ~0–800 Hz
+    if (f < 800.0) return 0.65; // 35% lower
+
+    // Second formant: ~800–2500 Hz
+    if (f < 2500.0)
+        return 0.65 - (f - 800.0) * (0.10) / (2500.0 - 800.0); // 0.65 → 0.55
+
+    // Highs: restore some ratio for consonant clarity
+    return 0.55 + (f - 2500.0) * 0.25 / (WORLD_SAMPLE_RATE / 2.0 - 2500.0);
+}
+
+
+void build_bin_map_m2f(BinMap *map, int bins, int fft_size, int fs) {
     for (int i = 0; i < bins; i++) {
         double target_freq = (double)i * fs / fft_size;
-        double src_freq = target_freq / warping_ratio_for_freq(target_freq);
+        double src_freq = target_freq / warping_ratio_for_freq_m2f(target_freq);
         if (src_freq > fs / 2.0) {
+            map[i].low = map[i].high = -1;
+            map[i].frac = 0.0;
+        } else {
+            double src_bin = src_freq * fft_size / fs;
+            map[i].low = (int)src_bin;
+            map[i].high = map[i].low + 1;
+            map[i].frac = src_bin - map[i].low;
+        }
+    }
+}
+
+void build_bin_map_f2m(BinMap *map, int bins, int fft_size, int fs) {
+    for (int i = 0; i < bins; i++) {
+        double target_freq = (double)i * fs / fft_size;
+
+        // Multiply to push bins lower in frequency
+        double src_freq = target_freq * warping_ratio_for_freq_f2m(target_freq);
+
+        if (src_freq > fs / 2.0 || src_freq < 0.0) {
             map[i].low = map[i].high = -1;
             map[i].frac = 0.0;
         } else {
@@ -85,22 +119,12 @@ void pitchshift(double *samples, const int factor, WorldParamters* config) {
             temporalPositions, f0);
     StoneMask(samples, WORLD_SAMPLE_SIZE, WORLD_SAMPLE_RATE, temporalPositions,
               f0, WORLD_F0_LENGTH, refined_f0);
-
     
-    #pragma omp parallel sections
-    {
-        #pragma omp section
-        {
-            CheapTrick(samples, WORLD_SAMPLE_SIZE, WORLD_SAMPLE_RATE, temporalPositions,
-                    refined_f0, WORLD_F0_LENGTH, &config->cheapTrickOption, config->spectrogram);
-        }
+    CheapTrick(samples, WORLD_SAMPLE_SIZE, WORLD_SAMPLE_RATE, temporalPositions,
+        refined_f0, WORLD_F0_LENGTH, &config->cheapTrickOption, config->spectrogram);
 
-        #pragma omp section
-        {
-            D4C(samples, WORLD_SAMPLE_SIZE, WORLD_SAMPLE_RATE, temporalPositions,
-                refined_f0, WORLD_F0_LENGTH, WORLD_FFT_SIZE, &config->d4cOption, config->aperiodicity);
-        }
-    }  // waits for both sections to finish
+    D4C(samples, WORLD_SAMPLE_SIZE, WORLD_SAMPLE_RATE, temporalPositions,
+        refined_f0, WORLD_F0_LENGTH, WORLD_FFT_SIZE, &config->d4cOption, config->aperiodicity);
 
     // F0 pitch shift
     for (int i = 0; i < WORLD_F0_LENGTH; ++i) {
@@ -152,7 +176,7 @@ const double kCeilF0 = 800.0;
 const double kLog2 = 0.69314718055994529;
 */
 
-int setup(WorldParamters* config) {
+int setup(WorldParamters* config, bool female) {
     InitializeCheapTrickOption(WORLD_SAMPLE_RATE, &config->cheapTrickOption);
     InitializeD4COption(&config->d4cOption);
     config->aperiodicity = malloc(WORLD_F0_LENGTH * sizeof(double *));
@@ -168,7 +192,12 @@ int setup(WorldParamters* config) {
     for (int i = 0; i < WORLD_SAMPLE_SIZE/2; ++i) {
         config->previousSamples[i] = 0;
     }
-    build_bin_map(config->map, WORLD_FFT_SIZE/2 +1, WORLD_FFT_SIZE, WORLD_SAMPLE_RATE);
+    if (female) {
+        build_bin_map_m2f(config->map, WORLD_FFT_SIZE/2 +1, WORLD_FFT_SIZE, WORLD_SAMPLE_RATE);
+    }
+    else {
+        build_bin_map_f2m(config->map, WORLD_FFT_SIZE/2 +1, WORLD_FFT_SIZE, WORLD_SAMPLE_RATE);
+    }
     return 0;
 }
 
