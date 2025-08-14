@@ -104,7 +104,17 @@ double* dummysamples = malloc(WORLD_SAMPLE_SIZE * sizeof(double));
     fillDummyInput(dummysamples, dummyf0TemPos, config.refined_f0);
     clock_t start = clock();
     for (int i = 0; i < 50; i++) {      // 50*16384 is about 17s of audio at 48kHz sample rate
-        reproduceThread(dummysamples, dummyf0TemPos, &config);
+        #pragma omp parallel sections 
+        {
+            #pragma omp section
+            {
+                reproduceThread(dummysamples, dummyf0TemPos, &config);
+            }
+            #pragma omp section
+            {
+                reproduceThread(dummysamples, dummyf0TemPos, &config);
+            }
+        }
     }
     clock_t end = clock();
     double elapsed_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
