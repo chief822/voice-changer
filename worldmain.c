@@ -10,7 +10,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <time.h> 
 #define BLOCK_SIZE 16384
 
 int main(int argc, char *argv[])

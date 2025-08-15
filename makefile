@@ -6,9 +6,9 @@ TARGET := $(MAKECMDGOALS)
 all: $(TARGET)
 
 %: %.c
-	gcc -I. -Ibuild -fopenmp -O3 -ftree-vectorize -fopt-info-vec-optimized -march=native -g -c $@.c
+	gcc -I. -Ibuild -fopenmp -O3 -ftree-vectorize -fopt-info-vec-optimized -funroll-loops -g -c $@.c
 	g++ $@.o build/libopworld.lib -fopenmp -O3 -g -o $@
 
 # static libray build command
-# g++ -c -I. -O3 -ftree-vectorize -fopt-info-vec-optimized -march=native -g *.cpp
-# ar rcs libname.lib *.o
+# g++ -c -I. -O3 -ftree-vectorize -fopt-info-vec-optimized -funroll-loops -g *.cpp
+# ar rcs libmoreopworld.lib *.o

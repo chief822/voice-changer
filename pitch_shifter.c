@@ -1,8 +1,6 @@
 #include "miniaudio.c"
-
-#define KISS_FFT_USE_ALLOCA
-#include "kissfft-master/kiss_fft.h"
-#include "kissfft-master/kiss_fftr.h"
+#include "world.c"
+#include "build/helpers.c"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,13 +8,6 @@
 #define BUFFER_SIZE 16384
 #define PITCH_SHIFT 2
 #define SAMPLE_RATE 48000
-
-typedef struct {
-    kiss_fftr_cfg fwd_config;
-    kiss_fftr_cfg inv_config;
-    kiss_fft_cpx* freqDomain;
-    kiss_fft_cpx* shiftedFreqDomain;
-} FFTContext;
 
 #ifdef __EMSCRIPTEN__
 void main_loop__em()
@@ -26,15 +17,6 @@ void main_loop__em()
 
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uint32 frameCount)
 {
-    /* This example assumes the playback and capture sides use the same format and channel count. */
-    if (pDevice->capture.format != pDevice->playback.format || pDevice->capture.channels != pDevice->playback.channels)
-    {
-        return;
-    }
-    if (frameCount != BUFFER_SIZE || pInput == NULL) {
-        // Optional safety check
-        return;
-    }
     MA_COPY_MEMORY(pOutput, pInput, frameCount * ma_get_bytes_per_frame(pDevice->capture.format, pDevice->capture.channels));
 }
 
@@ -94,16 +76,7 @@ int main(int argc, char **argv)
 
     deviceConfig.periodSizeInFrames = BUFFER_SIZE;
     deviceConfig.dataCallback = data_callback;
-    FFTContext setup;
-    setup.freqDomain = malloc(sizeof(kiss_fft_cpx) * (BUFFER_SIZE / 2 + 1));
-    setup.shiftedFreqDomain = malloc(sizeof(kiss_fft_cpx) * (BUFFER_SIZE / 2 + 1));
-    setup.fwd_config = kiss_fftr_alloc(BUFFER_SIZE, 0, NULL, NULL); // forward
-    setup.inv_config = kiss_fftr_alloc(BUFFER_SIZE, 1, NULL, NULL); // inverse
-    if (!setup.freqDomain || !setup.shiftedFreqDomain || !setup.fwd_config || !setup.inv_config) {
-        printf("Memory allocation failed.\n");
-        return -1;
-    }
-    deviceConfig.pUserData = &setup;
+    deviceConfig.pUserData = NULL;
     result = ma_device_init(NULL, &deviceConfig, &device);
     if (result != MA_SUCCESS)
     {
@@ -133,8 +106,6 @@ int main(int argc, char **argv)
 #endif
     
     ma_device_uninit(&device);
-    free(setup.freqDomain);
-    free(setup.shiftedFreqDomain);
     ma_context_uninit(&context);
 
     (void)argc;
