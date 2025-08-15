@@ -12,8 +12,8 @@
 
 #define WORLD_SAMPLE_RATE 48000
 #define WORLD_SAMPLE_SIZE 16384
-#define WORLD_FRAME_PERIOD 5
-#define WORLD_F0_LENGTH 69      // these are pre calculated and correct
+#define WORLD_FRAME_PERIOD 10
+#define WORLD_F0_LENGTH 35 // 35 for 10      // these are pre calculated and correct
 #define WORLD_FFT_SIZE 2048
 
 typedef struct {
