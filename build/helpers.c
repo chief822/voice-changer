@@ -2,9 +2,16 @@
 #include <stddef.h>  // for size_t
 #include <math.h>    // for round
 
-void convertFloatArrayToDouble(const float *floatArray, double *doubleArray, int size) {
-    for (int i = 0; i < size; i++) {
+#define HELPER_SIZE 32768
+
+void convertFloatArrayToDouble(const float *floatArray, double *doubleArray) {
+    for (int i = 0; i < HELPER_SIZE; i++) {
         doubleArray[i] = (double)floatArray[i]; // Explicitly cast float to double
+    }
+}
+void convertDoubleArrayToFloat(const double *doubleArray, float *floatArray) {
+    for (int i = 0; i < HELPER_SIZE; i++) {
+        floatArray[i] = (float)doubleArray[i];  // Explicitly cast double to float
     }
 }
 

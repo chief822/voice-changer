@@ -7,12 +7,12 @@
 #include "build/helpers.c"
 #include <stdint.h>
 #include <stddef.h>
-#include <math.h>
+#include <math.h> 
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h> 
-#define BLOCK_SIZE 16384
-
+#define BLOCK_SIZE 32768
+ 
 int main(int argc, char *argv[])
 {
     // Check command-line arguments
@@ -50,25 +50,22 @@ int main(int argc, char *argv[])
     double samples[BLOCK_SIZE];
     double processed[BLOCK_SIZE];
     int16_t output[BLOCK_SIZE];
-    WorldParamters config1;
-    setup(&config1, female); 
-    WorldParamters config2;
-    setup(&config2, female); 
+    WorldParameters config;
+    setup(&config, female);
     clock_t start = clock();
     while (1) {
         drwav_uint64 framesRead = drwav_read_pcm_frames_f32(&wav, BLOCK_SIZE, buffer);
         if (framesRead == 0)
             break; 
-        convertFloatArrayToDouble(buffer, samples, BLOCK_SIZE);
+        convertFloatArrayToDouble(buffer, samples);
         // removeDC(samples, BLOCK_SIZE);
-        process(samples, processed, factor, &config1, &config2);
+        process(samples, processed, factor, &config);
         drwav_f64_to_s16(output, processed, BLOCK_SIZE);
         drwav_write_pcm_frames(&out, framesRead, output);
     }
     clock_t end = clock();
     double elapsed_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;printf("Elapsed time: %.2f ms\n", elapsed_ms);
-    freeconfig(&config1);
-    freeconfig(&config2);
+    freeconfig(&config);
     // Close files
     drwav_uninit(&wav);
     drwav_uninit(&out);
