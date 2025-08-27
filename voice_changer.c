@@ -1,5 +1,5 @@
-#include "world.c"
-#include "build/helpers.c"
+#include "world.h"
+#include "build/helpers.h"
 #include "miniaudio.h"
 
 #include <stdio.h>
@@ -7,16 +7,14 @@
 #include <string.h> //for memset
 #include <stdint.h>
 
-#define BUFFER_SIZE 1024
-#define PROCESS_SIZE 32768
+#define BUFFER_SIZE 32768
 #define PITCH_SHIFT 2
 #define SAMPLE_RATE 48000
 
 typedef struct {
     WorldParameters config;
-    double samples[PROCESS_SIZE];
-    double processed[PROCESS_SIZE];
-    unsigned int index;
+    double samples[BUFFER_SIZE];
+    double processed[BUFFER_SIZE];
 } config;
 
 #ifdef __EMSCRIPTEN__
@@ -27,18 +25,12 @@ void main_loop__em()
 
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uint32 frameCount)
 {
+    printf("%d ", frameCount);
     config* data = pDevice->pUserData;
-    data->index %= PROCESS_SIZE;
-    memcpy(data->samples + data->index, pInput, BUFFER_SIZE * sizeof(double));
-    // convertFloatArrayToDouble(pInput, data->samples);
-    // process(data->samples, data->processed, PITCH_SHIFT, &data->config1, &data->config2);
-    // convertDoubleArrayToFloat(data->processed, pOutput);
-
-    memcpy(pOutput, data->processed + data->index, BUFFER_SIZE * sizeof(double));
-    data->index += BUFFER_SIZE;
-    if (data->index == PROCESS_SIZE) {
-        memcpy(data->processed, data->samples, PROCESS_SIZE * sizeof(double));
-    }
+    convertFloatArrayToDouble(pInput, data->samples);
+    memcpy(data->processed, data->samples, BUFFER_SIZE * sizeof(double));
+    process(data->samples, data->processed, PITCH_SHIFT, &(data->config));
+    convertDoubleArrayToFloat(data->processed, pOutput);
 }
 
 int main(int argc, char **argv)
@@ -104,11 +96,11 @@ int main(int argc, char **argv)
     
     deviceConfig.capture.format       = ma_format_f32;
     deviceConfig.capture.channels     = 1;
-    deviceConfig.capture.shareMode    = ma_share_mode_exclusive;
-
+    deviceConfig.capture.shareMode    = ma_share_mode_shared;   
+    // exclusive mode is not used because it is causing problems specifically delivering samples in weird but periodic way that weird is causing errors
     deviceConfig.playback.format      = ma_format_f32;
     deviceConfig.playback.channels    = 1;
-    deviceConfig.playback.shareMode = ma_share_mode_exclusive;
+    deviceConfig.playback.shareMode   = ma_share_mode_shared;
 
     deviceConfig.periodSizeInFrames = BUFFER_SIZE;
     deviceConfig.dataCallback = data_callback;
@@ -117,7 +109,6 @@ int main(int argc, char **argv)
     config data;
     setup(&data.config, tofemale);
     memset(data.processed, 0, sizeof(data.processed));
-    data.index = 0;
     deviceConfig.pUserData = &data;
 
     result = ma_device_init(NULL, &deviceConfig, &device);
@@ -146,11 +137,8 @@ int main(int argc, char **argv)
     printf("Press Enter to quit...\n");
     getchar();
 #endif
-    printf("here1\n");
     ma_device_uninit(&device);
-    printf("here2\n");
     ma_context_uninit(&context);
-    printf("here3\n");
 
     (void)argc;
     (void)argv;
