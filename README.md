@@ -29,3 +29,6 @@ Similarly get compiled worldmain you have to execute this on the command line it
 `./worldmain inputAudio.wav OutputAudioName.wav`
 you can also test on audio files i provided in tests folder like this:
 `./worldmain tests/raven.wav output.wav`
+
+#### Code Structure
+If reviewing my code, voice_changer.c contains code for real time use, worldmain.c for using it on audio files. The actual voice changing effect is in world.h.
