@@ -5,14 +5,15 @@
 #include "world/d4c.h"
 #include "world/synthesis.h"
 #include <string.h>	// for memcpy
-#include <math.h>
+#include <math.h>   // for pow
 #include <stdlib.h>	// dont know why for these
 #include <stdbool.h>
 #include <omp.h>	// for parallelism in pitchshift
 
+#define FACTOR 2
 #define WORLD_SAMPLE_RATE 48000
 #define WORLD_SAMPLE_SIZE 49152
-#define WORLD_FRAME_PERIOD 20
+#define WORLD_FRAME_PERIOD 5
 #define WORLD_F0_LENGTH 205    // these are pre calculated and correct
 #define WORLD_FFT_SIZE 2048
 #define WORLD_INPUT_SIZE 32768
@@ -108,7 +109,7 @@ void shift_formants(double **spectrogram, BinMap *map) {
     free(temp);
 }
 
-void pitchshift(double *samples, const int factor, WorldParameters* config) {
+void pitchshift(double *samples, WorldParameters* config) {
     DioOption dioOption;
     InitializeDioOption(&dioOption);
     dioOption.frame_period = WORLD_FRAME_PERIOD;
@@ -135,7 +136,7 @@ void pitchshift(double *samples, const int factor, WorldParameters* config) {
     }
     // F0 pitch shift
     for (int i = 0; i < WORLD_F0_LENGTH; ++i) {
-        refined_f0[i] *= factor;
+        refined_f0[i] *= FACTOR;
     }
 
     // Formant shift
@@ -145,12 +146,12 @@ void pitchshift(double *samples, const int factor, WorldParameters* config) {
     WORLD_SAMPLE_RATE, WORLD_SAMPLE_SIZE, samples);
 }
 
-void process(double *samples, double* output, const int factor, WorldParameters* config) {
+void process(double *samples, double* output, WorldParameters* config) {
     double current_samples[WORLD_SAMPLE_SIZE];
     memcpy(current_samples, config->previousSamples, WORLD_INPUT_SIZE/2  * sizeof(double));
     memcpy(config->previousSamples, samples + WORLD_INPUT_SIZE/2, WORLD_INPUT_SIZE/2  * sizeof(double));
     memcpy(current_samples + WORLD_INPUT_SIZE/2, samples, WORLD_INPUT_SIZE * sizeof(double));
-    pitchshift(current_samples, factor, config);
+    pitchshift(current_samples, config);
     memcpy(output, current_samples + WORLD_INPUT_SIZE/4, WORLD_INPUT_SIZE * sizeof(double));
 }
 
