@@ -5,17 +5,21 @@
 #include "world/d4c.h"
 #include "world/synthesis.h"
 #include <string.h>	// for memcpy
-#include <math.h>   // for pow
-#include <stdlib.h>	// dont know why for these
+#include <stdlib.h>	
 #include <stdbool.h>
 #include <omp.h>	// for parallelism in pitchshift
 
 #define FACTOR 2
-#define WORLD_SAMPLE_RATE 48000
-#define WORLD_SAMPLE_SIZE 49152
+#define WORLD_SAMPLE_RATE 48000 
+#define WORLD_SAMPLE_SIZE 49152 // this should be 1.5 times the input size
 #define WORLD_FRAME_PERIOD 5
-#define WORLD_F0_LENGTH 205    // these are pre calculated and correct
-#define WORLD_FFT_SIZE 2048
+#define WORLD_F0_LENGTH 205    // these are pre calculated and correct, if you are editing frame period or sample size then find f0 length using this:
+/* use sample size not input size for this
+int GetSamplesForDIO(int fs, int x_length, double frame_period) {
+    return static_cast<int>(1000.0 * x_length / fs / frame_period) + 1;
+}
+*/
+#define WORLD_FFT_SIZE 2048 // better if you dont edit anything that changes fft size as it is not easy to make it work without error
 #define WORLD_INPUT_SIZE 32768
 
 typedef struct {
