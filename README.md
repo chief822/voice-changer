@@ -5,6 +5,7 @@ My build folder has precompiled libs which you may try to compile using my makef
 - miniaudio available at https://miniaud.io/
 - vb audio cable https://vb-audio.com/Cable/ , these are required only if you are compiilng and using my voice_changer.c
 - world vocoder available at https://github.com/mmorise/World
+
 I already have them in my build folder and you can compile them there directly and link with voice_changer.c or worldmain.c or with your own app, you can use my makefile if you follow the same structure when compiling.
 If you just want the voice_changer effect that is available in my file world.h. You can use this function to do it:
 
