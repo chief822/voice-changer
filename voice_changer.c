@@ -8,7 +8,6 @@
 #include <stdint.h>
 
 #define BUFFER_SIZE 32768
-#define PITCH_SHIFT 2
 #define SAMPLE_RATE 48000
 
 typedef struct {
@@ -27,10 +26,12 @@ void data_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uin
 {
     printf("%d ", frameCount);
     config* data = pDevice->pUserData;
-    convertFloatArrayToDouble(pInput, data->samples);
-    memcpy(data->processed, data->samples, BUFFER_SIZE * sizeof(double));
-    process(data->samples, data->processed, PITCH_SHIFT, &(data->config));
     convertDoubleArrayToFloat(data->processed, pOutput);
+    // move this to a worker thread todo
+    convertFloatArrayToDouble(pInput, data->samples);
+    removeDC(data->samples, BUFFER_SIZE);
+    memcpy(data->processed, data->samples, BUFFER_SIZE * sizeof(double));
+    process(data->samples, data->processed, &(data->config));
 }
 
 int main(int argc, char **argv)
