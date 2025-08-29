@@ -20,3 +20,11 @@ WorldParameters config;
 setup(WorldParameters* config, bool female);
 // you can pass 1 or true in place of female always as male version is not currently supported well, then finally call the process function
 ```
+
+#### Voice Changer
+To use my voice_changer either compile or use the precompiled one and just execute it, it will first try to automatically find vb audio cable if it failed then it would ask user to input its id and then you can use it
+#### To do it on a audio file
+Similarly get compiled worldmain you have to execute this on the command line it expects wav file as input and wav file as output, use it like this:
+`./worldmain inputAudio.wav OutputAudioName.wav`
+you can also test on audio files i provided in tests folder like this:
+`./worldmain tests/raven.wav output.wav`
