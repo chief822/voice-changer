@@ -1,4 +1,4 @@
-### USAGE:
+### Compilation:
 To compile this code there are some dependencies you need to get before
 #### Dependencies:
 My build folder has precompiled libs which you may try to compile using my makefile but their ABI may not follow yours so better to compile them for yourself. Following are are the dependencies required:
@@ -21,7 +21,8 @@ WorldParameters config;
 setup(WorldParameters* config, bool female);
 // you can pass 1 or true in place of female always as male version is not currently supported well, then finally call the process function
 ```
-
+### Usage
+I have them precompiled for 64 bit windows [here](https://drive.google.com/drive/folders/147hmcLC1YysNaVwubGKqJZf3SLIw5zC3?usp=drive_link).
 #### Voice Changer
 To use my voice_changer either compile or use the precompiled one and just execute it, it will first try to automatically find vb audio cable if it failed then it would ask user to input its id and then you can use it
 #### To do it on a audio file
