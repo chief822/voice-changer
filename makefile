@@ -6,8 +6,8 @@ TARGET := $(MAKECMDGOALS)
 all: $(TARGET)
 
 %: %.c
-	gcc -I. -Ibuild -fopenmp -O3 -ftree-vectorize -fopt-info-vec-optimized -funroll-loops -g -c $@.c
-	g++ $@.o build/libminiaudio.lib build/libmoreopworld.lib -fopenmp -O3 -g -o $@
+	gcc -I. -Ibuild -fopenmp -O3 -ftree-vectorize -funroll-loops -g -c $@.c
+	g++ $@.o build/libclangworld.lib -fopenmp -O3 -g -o $@
 
 # static libray build command
 # g++ -c -I. -O3 -ftree-vectorize -fopt-info-vec-optimized -funroll-loops -g *.cpp

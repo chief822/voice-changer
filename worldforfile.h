@@ -10,17 +10,15 @@
 #include <omp.h>	// for parallelism in pitchshift
 
 #define FACTOR 2
-#define WORLD_SAMPLE_RATE 48000 
-#define WORLD_SAMPLE_SIZE 49152 // this should be 1.5 times the input size
+#define WORLD_SAMPLE_RATE 48000
 #define WORLD_FRAME_PERIOD 5
-#define WORLD_F0_LENGTH 205    // these are pre calculated and correct, if you are editing frame period or sample size then find f0 length using this:
+// these are pre calculated and correct, if you are editing frame period or sample size then find f0 length using this:
 /* use sample size not input size for this
 int GetSamplesForDIO(int fs, int x_length, double frame_period) {
     return static_cast<int>(1000.0 * x_length / fs / frame_period) + 1;
 }
 */
 #define WORLD_FFT_SIZE 2048 // better if you dont edit anything that changes fft size as it is not easy to make it work without error
-#define WORLD_INPUT_SIZE 32768
 
 typedef struct {
     int low;
@@ -31,10 +29,9 @@ typedef struct {
 typedef struct {
     CheapTrickOption cheapTrickOption;
     D4COption d4cOption;
-    double refined_f0[WORLD_F0_LENGTH];
+    double *refined_f0;
     double **spectrogram;
     double **aperiodicity;
-    double previousSamples[WORLD_INPUT_SIZE/2]; // acoording to 50% hop length
     BinMap map[WORLD_FFT_SIZE/2 + 1];
 } WorldParameters;
 
@@ -93,10 +90,10 @@ void build_bin_map_f2m(BinMap *map) {
     }
 }
 
-void shift_formants(double **spectrogram, BinMap *map) {
+void shift_formants(double **spectrogram, int f0_length, BinMap *map) {
     double *temp = malloc(sizeof(double) * (WORLD_FFT_SIZE/2 + 1));
 
-    for (int p = 0; p < WORLD_F0_LENGTH; p++) {
+    for (int p = 0; p < f0_length; p++) {
         for (int i = 0; i < WORLD_FFT_SIZE/2 + 1; i++) {
             if (map[i].low < 0) {
                 temp[i] = 0.0;
@@ -113,50 +110,44 @@ void shift_formants(double **spectrogram, BinMap *map) {
     free(temp);
 }
 
-void pitchshift(double *samples, WorldParameters* config) {
+void pitchshift(double *samples, int sampleCount, WorldParameters* config) {
+    int f0_length = GetSamplesForDIO(WORLD_SAMPLE_RATE, sampleCount, WORLD_FRAME_PERIOD);
     DioOption dioOption;
     InitializeDioOption(&dioOption);
     dioOption.frame_period = WORLD_FRAME_PERIOD;
-    double temporalPositions[WORLD_F0_LENGTH];
-    double f0[WORLD_F0_LENGTH];
+    double *temporalPositions = malloc(f0_length * sizeof(double));
+    double *f0 = malloc(f0_length * sizeof(double));
     double *refined_f0 = config->refined_f0;
 
-    Dio(samples, WORLD_SAMPLE_SIZE, WORLD_SAMPLE_RATE, &dioOption,
+    Dio(samples, sampleCount, WORLD_SAMPLE_RATE, &dioOption,
             temporalPositions, f0);
-    StoneMask(samples, WORLD_SAMPLE_SIZE, WORLD_SAMPLE_RATE, temporalPositions,
-              f0, WORLD_F0_LENGTH, refined_f0);
+    StoneMask(samples, sampleCount, WORLD_SAMPLE_RATE, temporalPositions,
+              f0, f0_length, refined_f0);
     #pragma omp parallel sections
     {
         #pragma omp section
         {
-            CheapTrick(samples, WORLD_SAMPLE_SIZE, WORLD_SAMPLE_RATE, temporalPositions,
-                refined_f0, WORLD_F0_LENGTH, &config->cheapTrickOption, config->spectrogram);
+            CheapTrick(samples, sampleCount, WORLD_SAMPLE_RATE, temporalPositions,
+                refined_f0, f0_length, &config->cheapTrickOption, config->spectrogram);
         }
         #pragma omp section
         {
-            D4C(samples, WORLD_SAMPLE_SIZE, WORLD_SAMPLE_RATE, temporalPositions,
-                refined_f0, WORLD_F0_LENGTH, WORLD_FFT_SIZE, &config->d4cOption, config->aperiodicity);
+            D4C(samples, sampleCount, WORLD_SAMPLE_RATE, temporalPositions,
+                refined_f0, f0_length, WORLD_FFT_SIZE, &config->d4cOption, config->aperiodicity);
         }
     }
     // F0 pitch shift
-    for (int i = 0; i < WORLD_F0_LENGTH; ++i) {
+    for (int i = 0; i < f0_length; ++i) {
         refined_f0[i] *= FACTOR;
     }
 
     // Formant shift
-    shift_formants(config->spectrogram, config->map);
-    Synthesis(config->refined_f0, WORLD_F0_LENGTH, (const double * const *)config->spectrogram, 
+    shift_formants(config->spectrogram, f0_length, config->map);
+    Synthesis(config->refined_f0, f0_length, (const double * const *)config->spectrogram,
     (const double * const *)config->aperiodicity, WORLD_FFT_SIZE, WORLD_FRAME_PERIOD, 
-    WORLD_SAMPLE_RATE, WORLD_SAMPLE_SIZE, samples);
-}
-
-void process(double *samples, double* output, WorldParameters* config) {
-    double current_samples[WORLD_SAMPLE_SIZE];
-    memcpy(current_samples, config->previousSamples, WORLD_INPUT_SIZE/2  * sizeof(double));
-    memcpy(config->previousSamples, samples + WORLD_INPUT_SIZE/2, WORLD_INPUT_SIZE/2  * sizeof(double));
-    memcpy(current_samples + WORLD_INPUT_SIZE/2, samples, WORLD_INPUT_SIZE * sizeof(double));
-    pitchshift(current_samples, config);
-    memcpy(output, current_samples + WORLD_INPUT_SIZE/4, WORLD_INPUT_SIZE * sizeof(double));
+    WORLD_SAMPLE_RATE, sampleCount, samples);
+    free(temporalPositions);
+    free(f0);
 }
 
 /*
@@ -165,32 +156,27 @@ const double kCeilF0 = 800.0;
 const double kLog2 = 0.69314718055994529;
 */
 
-int setup(WorldParameters* config, bool female) {
+int setup(WorldParameters* config, int sampleCount, bool female) {
     InitializeCheapTrickOption(WORLD_SAMPLE_RATE, &config->cheapTrickOption);
     InitializeD4COption(&config->d4cOption);
-    config->aperiodicity = malloc(WORLD_F0_LENGTH * sizeof(double *));
-    double *aperiodicity_data = malloc(WORLD_F0_LENGTH * (WORLD_FFT_SIZE / 2 + 1) * sizeof(double));
-    for (int i = 0; i < WORLD_F0_LENGTH; ++i) {
+    int f0_length = GetSamplesForDIO(WORLD_SAMPLE_RATE, sampleCount, WORLD_FRAME_PERIOD);
+    config->aperiodicity = malloc(f0_length * sizeof(double *));
+    double *aperiodicity_data = malloc(f0_length * (WORLD_FFT_SIZE / 2 + 1) * sizeof(double));
+    for (int i = 0; i < f0_length; ++i) {
         config->aperiodicity[i] = aperiodicity_data + i * (WORLD_FFT_SIZE / 2 + 1);
     }
-    config->spectrogram = malloc(WORLD_F0_LENGTH * sizeof(double *));
-    double *spectrogram_data = malloc(WORLD_F0_LENGTH * (WORLD_FFT_SIZE / 2 + 1) * sizeof(double));
-    for (int i = 0; i < WORLD_F0_LENGTH; ++i) {
+    config->spectrogram = malloc(f0_length * sizeof(double *));
+    double *spectrogram_data = malloc(f0_length * (WORLD_FFT_SIZE / 2 + 1) * sizeof(double));
+    for (int i = 0; i < f0_length; ++i) {
         config->spectrogram[i] = spectrogram_data + i * (WORLD_FFT_SIZE / 2 + 1);
     }
-    for (int i = 0; i < WORLD_INPUT_SIZE/2; ++i) {
-        config->previousSamples[i] = 0;
-    }
-    if (female) {
-        build_bin_map_m2f(config->map);
-    }
-    else {
-        build_bin_map_f2m(config->map);
-    }
+    build_bin_map_m2f(config->map);
+
     return 0;
 }
 
 void freeconfig(WorldParameters* config) {
+    free(config->refined_f0);
     if (config->spectrogram) {
         free(config->spectrogram[0]);  // Only if WORLD_F0_LENGTH > 0 and setup was successful
         free(config->spectrogram);
