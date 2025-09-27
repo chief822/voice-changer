@@ -11,7 +11,7 @@
 
 #define FACTOR 2
 #define WORLD_SAMPLE_RATE 48000
-#define WORLD_FRAME_PERIOD 5
+#define WORLD_FRAME_PERIOD 2.5
 // these are pre calculated and correct, if you are editing frame period or sample size then find f0 length using this:
 /* use sample size not input size for this
 int GetSamplesForDIO(int fs, int x_length, double frame_period) {
@@ -111,6 +111,7 @@ void shift_formants(double **spectrogram, int f0_length, BinMap *map) {
 }
 
 void pitchshift(double *samples, int sampleCount, WorldParameters* config) {
+    printf("here1\n");
     int f0_length = GetSamplesForDIO(WORLD_SAMPLE_RATE, sampleCount, WORLD_FRAME_PERIOD);
     DioOption dioOption;
     InitializeDioOption(&dioOption);
@@ -119,10 +120,14 @@ void pitchshift(double *samples, int sampleCount, WorldParameters* config) {
     double *f0 = malloc(f0_length * sizeof(double));
     double *refined_f0 = config->refined_f0;
 
+    printf("here2\n");
     Dio(samples, sampleCount, WORLD_SAMPLE_RATE, &dioOption,
             temporalPositions, f0);
+    printf("here8\n");
     StoneMask(samples, sampleCount, WORLD_SAMPLE_RATE, temporalPositions,
               f0, f0_length, refined_f0);
+    printf("here3\n");
+    // threading boost available
     #pragma omp parallel sections
     {
         #pragma omp section
@@ -136,6 +141,7 @@ void pitchshift(double *samples, int sampleCount, WorldParameters* config) {
                 refined_f0, f0_length, WORLD_FFT_SIZE, &config->d4cOption, config->aperiodicity);
         }
     }
+    printf("here4\n");
     // F0 pitch shift
     for (int i = 0; i < f0_length; ++i) {
         refined_f0[i] *= FACTOR;
@@ -143,6 +149,7 @@ void pitchshift(double *samples, int sampleCount, WorldParameters* config) {
 
     // Formant shift
     shift_formants(config->spectrogram, f0_length, config->map);
+    printf("here5\n");
     Synthesis(config->refined_f0, f0_length, (const double * const *)config->spectrogram,
     (const double * const *)config->aperiodicity, WORLD_FFT_SIZE, WORLD_FRAME_PERIOD, 
     WORLD_SAMPLE_RATE, sampleCount, samples);
@@ -161,6 +168,7 @@ int setup(WorldParameters* config, int sampleCount, bool female) {
     InitializeD4COption(&config->d4cOption);
     int f0_length = GetSamplesForDIO(WORLD_SAMPLE_RATE, sampleCount, WORLD_FRAME_PERIOD);
     config->aperiodicity = malloc(f0_length * sizeof(double *));
+    config->refined_f0 = malloc(f0_length * sizeof(double *));
     double *aperiodicity_data = malloc(f0_length * (WORLD_FFT_SIZE / 2 + 1) * sizeof(double));
     for (int i = 0; i < f0_length; ++i) {
         config->aperiodicity[i] = aperiodicity_data + i * (WORLD_FFT_SIZE / 2 + 1);
