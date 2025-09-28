@@ -1,4 +1,3 @@
-#define DR_WAV_IMPLEMENTATION // too lazy to do it in separate file that's why
 #include "build/dr_wav.h"
 
 #include "world.h"

@@ -27,6 +27,8 @@ bazel-testlogs/
 *.swp
 *.swo
 *.swn
+*.lib
+*.a
 
 # === IDE and Editor Stuff ===
 .vscode/

@@ -1,4 +1,3 @@
-#define DR_WAV_IMPLEMENTATION
 #include "build/dr_wav.h"
 
 #include "worldforfile.h"
@@ -91,21 +90,16 @@ int main(int argc, char *argv[])
         return -4;
     }
 
-    printf("here1\n");
     clock_t start = clock();
 
     // Convert, process, convert back
     convertFloatArrayToDouble(pSampleData, buffer, totalSampleCount);
-    printf("here2\n");
     // If pitchshift expects frame count, call pitchshift(buffer, totalFrameCount, &config);
-    pitchshift(buffer, totalSampleCount, &config);      // <--- todo fix seg fault here
-    printf("here3\n");
+    pitchshift(buffer, totalSampleCount, &config);
     convertDoubleArrayToFloat(buffer, pSampleData, totalSampleCount);
 
-    printf("here4\n");
     // Write frames - drwav_write_pcm_frames expects frame count
     drwav_uint64 framesWritten = drwav_write_pcm_frames(&wav, totalFrameCount, pSampleData);
-    printf("here5\n");
     if (framesWritten != totalFrameCount) {
         fprintf(stderr, "Warning: wrote %" PRIu64 " frames but expected %" PRIu64 "\n",
                 framesWritten, totalFrameCount);

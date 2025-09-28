@@ -111,7 +111,6 @@ void shift_formants(double **spectrogram, int f0_length, BinMap *map) {
 }
 
 void pitchshift(double *samples, int sampleCount, WorldParameters* config) {
-    printf("here1\n");
     int f0_length = GetSamplesForDIO(WORLD_SAMPLE_RATE, sampleCount, WORLD_FRAME_PERIOD);
     DioOption dioOption;
     InitializeDioOption(&dioOption);
@@ -120,13 +119,10 @@ void pitchshift(double *samples, int sampleCount, WorldParameters* config) {
     double *f0 = malloc(f0_length * sizeof(double));
     double *refined_f0 = config->refined_f0;
 
-    printf("here2\n");
     Dio(samples, sampleCount, WORLD_SAMPLE_RATE, &dioOption,
             temporalPositions, f0);
-    printf("here8\n");
     StoneMask(samples, sampleCount, WORLD_SAMPLE_RATE, temporalPositions,
               f0, f0_length, refined_f0);
-    printf("here3\n");
     // threading boost available
     #pragma omp parallel sections
     {
@@ -141,7 +137,6 @@ void pitchshift(double *samples, int sampleCount, WorldParameters* config) {
                 refined_f0, f0_length, WORLD_FFT_SIZE, &config->d4cOption, config->aperiodicity);
         }
     }
-    printf("here4\n");
     // F0 pitch shift
     for (int i = 0; i < f0_length; ++i) {
         refined_f0[i] *= FACTOR;
@@ -149,7 +144,6 @@ void pitchshift(double *samples, int sampleCount, WorldParameters* config) {
 
     // Formant shift
     shift_formants(config->spectrogram, f0_length, config->map);
-    printf("here5\n");
     Synthesis(config->refined_f0, f0_length, (const double * const *)config->spectrogram,
     (const double * const *)config->aperiodicity, WORLD_FFT_SIZE, WORLD_FRAME_PERIOD, 
     WORLD_SAMPLE_RATE, sampleCount, samples);
