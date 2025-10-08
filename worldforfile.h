@@ -5,6 +5,7 @@
 #include "world/d4c.h"
 #include "world/synthesis.h"
 #include <string.h>	// for memcpy
+#include <math.h>
 #include <stdlib.h>	
 #include <stdbool.h>
 #include <omp.h>	// for parallelism in pitchshift
@@ -34,6 +35,23 @@ typedef struct {
     double **aperiodicity;
     BinMap map[WORLD_FFT_SIZE/2 + 1];
 } WorldParameters;
+
+// Function to compute geometric mean using log trick
+double geometric_mean(const double arr[], size_t n) {
+    if (n == 0) {
+        return NAN; // undefined for empty arrays
+    }
+
+    double log_sum = 0.0;
+    for (size_t i = 0; i < n; i++) {
+        if (arr[i] <= 0.0) {
+            return NAN; // geometric mean only defined for positive numbers
+        }
+        log_sum += log(arr[i]);
+    }
+
+    return exp(log_sum / n);
+}
 
 double warping_ratio_for_freq_m2f(double f) {
     if (f < 500.0) return 1.08;
@@ -137,18 +155,28 @@ void pitchshift(double *samples, int sampleCount, WorldParameters* config) {
                 refined_f0, f0_length, WORLD_FFT_SIZE, &config->d4cOption, config->aperiodicity);
         }
     }
-    // F0 pitch shift
+
+    double* pitchs = malloc(f0_length * sizeof(double *));
+    int index = 0;
     for (int i = 0; i < f0_length; ++i) {
-        refined_f0[i] *= FACTOR;
+        if (refined_f0[i] > 50.0) {
+            pitchs[index] = refined_f0[i];
+            index++;
+        }
+    }
+    size_t pitch = geometric_mean(pitchs, index);
+    for (int i = 0; i < f0_length; ++i) {
+        if (refined_f0[i] > 50.0) {
+            refined_f0[i] = pitch;
+        }
     }
 
-    // Formant shift
-    shift_formants(config->spectrogram, f0_length, config->map);
     Synthesis(config->refined_f0, f0_length, (const double * const *)config->spectrogram,
     (const double * const *)config->aperiodicity, WORLD_FFT_SIZE, WORLD_FRAME_PERIOD, 
     WORLD_SAMPLE_RATE, sampleCount, samples);
     free(temporalPositions);
     free(f0);
+    free(pitchs);
 }
 
 /*
