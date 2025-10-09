@@ -1,3 +1,7 @@
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
+
 #include "build/dr_wav.h"
 
 #include "betterworld.h"
@@ -11,7 +15,11 @@
 #include <time.h>
 #define BLOCK_SIZE 32768
 
-int main(int argc, char *argv[])
+#ifndef __EMSCRIPTEN__
+#define EMSCRIPTEN_KEEPALIVE
+#endif
+
+EMSCRIPTEN_KEEPALIVE int main(int argc, char *argv[])
 {
     // Check command-line arguments
     if (argc != 3)
@@ -68,5 +76,4 @@ int main(int argc, char *argv[])
     // Close files
     drwav_uninit(&wav);
     drwav_uninit(&out);
-
 }

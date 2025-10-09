@@ -1,5 +1,5 @@
-#include "world.h"
-#include "build/helpers.h"
+#include "betterworld.h"
+#include "build/betterhelpers.h"
 #include "miniaudio.h"
 
 #include <stdio.h>
@@ -26,9 +26,9 @@ void data_callback(ma_device *pDevice, void *pOutput, const void *pInput, ma_uin
 {
     printf("%d ", frameCount);
     config* data = pDevice->pUserData;
-    convertDoubleArrayToFloat(data->processed, pOutput);
+    convertDoubleArrayToFloat(data->processed, pOutput, BUFFER_SIZE);
     // move this to a worker thread todo
-    convertFloatArrayToDouble(pInput, data->samples);
+    convertFloatArrayToDouble(pInput, data->samples, BUFFER_SIZE);
     removeDC(data->samples, BUFFER_SIZE);
     memcpy(data->processed, data->samples, BUFFER_SIZE * sizeof(double));
     process(data->samples, data->processed, &(data->config));
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
 
     const int tofemale = 1;
     config data;
-    setup(&data.config, tofemale);
+    setup(&data.config, BUFFER_SIZE, SAMPLE_RATE, 5, tofemale);
     memset(data.processed, 0, sizeof(data.processed));
     deviceConfig.pUserData = &data;
 

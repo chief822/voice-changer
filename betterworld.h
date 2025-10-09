@@ -118,26 +118,16 @@ void pitchshift(double *samples, WorldParameters* config) {
         config->refined_f0, f0_length, &config->cheapTrickOption, config->spectrogram);
     D4C(samples, sampleCount, sampleRate, config->temporalPositions,
         config->refined_f0, f0_length, WORLD_FFT_SIZE, &config->d4cOption, config->aperiodicity);
-
-    double* pitchs = malloc(f0_length * sizeof(double));
-    int index = 0;
+    // int pitch = 170.0;
     for (int i = 0; i < f0_length; ++i) {
         if (config->refined_f0[i] > 50.0) {
-            pitchs[index] = config->refined_f0[i];
-            index++;
+            config->refined_f0[i] *= 2;
         }
     }
-    double pitch = geometric_mean(pitchs, index);
-    for (int i = 0; i < f0_length; ++i) {
-        if (config->refined_f0[i] > 50.0) {
-            config->refined_f0[i] = pitch;
-        }
-    }
-
+    shift_formants(config->spectrogram, f0_length, config->map);
     Synthesis(config->refined_f0, f0_length, (const double * const *)config->spectrogram,
               (const double * const *)config->aperiodicity, WORLD_FFT_SIZE, config->framePeriod,
               sampleRate, sampleCount, samples);
-    free(pitchs);
 }
 
 void process(double *samples, double* output, WorldParameters* config) {
@@ -179,6 +169,9 @@ int setup(WorldParameters* config, int sampleCountPerCall, int sampleRate, int f
         free(aperiodicity_data);
         return -1;
     }
+    // for (int i = 0; i < f0_length * (WORLD_FFT_SIZE / 2 + 1); ++i) {
+    //     aperiodicity_data[i] = 0.0;
+    // }
     for (int i = 0; i < f0_length; ++i)
         config->aperiodicity[i] = aperiodicity_data + i * (WORLD_FFT_SIZE / 2 + 1);
 
