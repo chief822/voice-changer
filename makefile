@@ -12,7 +12,7 @@ CXX = g++
 CC = gcc
 CXXFLAGS = -c -IWorld-master/src/ -O3 -ftree-vectorize -fopt-info-vec-optimized -funroll-loops -g
 CFLAGS = -c -I. -O3 -ftree-vectorize -fopt-info-vec-optimized -funroll-loops -g
-LDFLAGS = -fopenmp -O3 -g
+LDFLAGS = -O3 -g
 
 LIB_NAME = libworld.$(LIB_EXT)
 LIB_PATH = $(BUILD_DIR)/$(LIB_NAME)
@@ -48,7 +48,7 @@ $(DRWAV_OBJ): $(BUILD_DIR)/dr_wav.c
 
 # Rule to compile any executable from a .c file
 %: %.c $(LIB_PATH) $(MINIAUDIO_OBJ) $(DRWAV_OBJ)
-	$(CC) -I. -I$(BUILD_DIR) -fopenmp -O3 -ftree-vectorize -fopt-info-vec-optimized -funroll-loops -g -c $< -o $@.o
+	$(CC) -I. -I$(BUILD_DIR) -O3 -ftree-vectorize -fopt-info-vec-optimized -funroll-loops -g -c $< -o $@.o
 	$(CXX) $@.o $(MINIAUDIO_OBJ) $(DRWAV_OBJ) $(LIB_PATH) $(LDFLAGS) -o $@
 	rm -f $@.o
 
