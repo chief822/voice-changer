@@ -1,4 +1,4 @@
-### Compilation:
+### [OUTDATED]Compilation:
 To compile this code there are some dependencies you need to get before
 #### Dependencies:
 My build folder has precompiled libs which you may try to compile using my makefile but their ABI may not follow yours so better to compile them for yourself. Following are are the dependencies required:
@@ -33,3 +33,4 @@ you can also test on audio files i provided in tests folder like this:
 
 #### Code Structure
 If reviewing my code, voice_changer.c contains code for real time use, worldmain.c for using it on audio files. The actual voice changing effect is in world.h.
+
