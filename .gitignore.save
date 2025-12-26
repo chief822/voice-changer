@@ -1,0 +1,69 @@
+# === Build and Output Directories ===
+archive/
+webrtc-m137_release/
+out/
+bazel-bin/
+bazel-out/
+bazel-testlogs/
+.obj/
+.gn/
+.ninja_log
+.ninja_deps
+
+# === Generated Files ===
+*.o
+*.obj
+*.so
+*.dll
+*.exe
+*.dylib
+*.a
+*.pch
+*.pdb
+*.ilk
+*.exp
+*.log
+*.tmp
+*.swp
+*.swo
+*.swn
+*.lib
+*.a
+
+# === IDE and Editor Stuff ===
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.code-workspace
+
+# === OS-Specific ===
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# === Git-Specific ===
+*.orig
+
+# === Python (if using GN/python scripts) ===
+__pycache__/
+*.pyc
+
+# === Archive and Backup Files ===
+*.tar
+*.gz
+*.zip
+*.bak
+*.old
+
+# === Clang and Ninja Intermediate Files ===
+*.ninja
+*.d
+*.deps
+*.clang-format
+*.gch
+
+# === WebRTC Third-Party Cache ===
+third_party/llvm-build/
+third_party/abseil-cpp/absl/base/config.h
