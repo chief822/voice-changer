@@ -1,36 +1,27 @@
-### [OUTDATED]Compilation:
+### PRESQUITES
+You need to have a c compiler installed to build it.
+
+### Compilation:
 To compile this code there are some dependencies you need to get before
+
 #### Dependencies:
-My build folder has precompiled libs which you may try to compile using my makefile but their ABI may not follow yours so better to compile them for yourself. Following are are the dependencies required:
-- miniaudio available at https://miniaud.io/
-- vb audio cable https://vb-audio.com/Cable/ , these are required only if you are compiilng and using my voice_changer.c
-- dr_wav.h if you are using my app which does the effect on wav files
-- world vocoder available at https://github.com/mmorise/World
+- To use real time voice changer install, vb audio cable, available at https://vb-audio.com/Cable/ , this is required only if you are using my real time voice_changer.c
+- make
 
-I already have them in my build folder and you can compile them there directly and link with voice_changer.c or worldmain.c or with your own app, you can use my makefile if you follow the same structure when compiling.
-If you just want the voice_changer effect that is available in my file world.h. You can use this function to do it:
+Libs used are already in build/
+To compile run in root directory: `make worldmain` or `make voice_changer`
+worldmain is the cli tool for applying voice effect on audio files and voice changer for real time
 
-```
-process(
-double *samples,    // input samples buffer, default size is 32768 to change it you have to change the macros world.h and do some more modification, also dont use less than 16384 sample size otherwise the effect quality will decrease
-double* output,     // output buffer
-WorldParameters* config);    // config buffer
-// to get the config variable do this
-WorldParameters config;
-// then initialize it to make it work using this
-setup(WorldParameters* config, bool female);
-// you can pass 1 or true in place of female always as male version is not currently supported well, then finally call the process function
-```
-### Usage
-I have them precompiled for 64 bit windows [here](https://drive.google.com/drive/folders/147hmcLC1YysNaVwubGKqJZf3SLIw5zC3?usp=drive_link).
-#### Voice Changer
-To use my voice_changer either compile or use the precompiled one and just execute it, it will first try to automatically find vb audio cable if it failed then it would ask user to input its id and then you can use it
-#### To do it on a audio file
-Similarly get compiled worldmain you have to execute this on the command line it expects wav file as input and wav file as output, use it like this:
-`./worldmain inputAudio.wav OutputAudioName.wav`
-you can also test on audio files i provided in tests folder like this:
-`./worldmain tests/raven.wav output.wav`
+##### CLI tool
+you can either add worldmain to path or copy it in the folder where the audio file is located. run `./worldmain name.wav output.wav` replace name with audio file name and output with your desired name
+
+##### Real time voice changer
+there are 2 effects one robotic and other feminine. you can comment/uncomment the section to choose your effect in world.h before compiling.
+run voice_changer and it will select vb audio since its available only on windows it won't and for other os you can pick other virtual microphone to use it. then go to app in which you want to change your voice and go to its settings and change microphone to the virtual microphone you choosed when running voicechanger.
+
+If you want to use the voice_changer effect somewhere else that is available in my file world.h. You can see how to use it in worldmain.c
 
 #### Code Structure
 If reviewing my code, voice_changer.c contains code for real time use, worldmain.c for using it on audio files. The actual voice changing effect is in world.h.
+
 
